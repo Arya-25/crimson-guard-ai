@@ -2,39 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Crime Investigation Department Design System - Cyberpunk Law Enforcement Theme */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Dark Theme - Tactical Command Center */
+    --background: 220 20% 8%;
+    --foreground: 200 20% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Cards & Surfaces */
+    --card: 220 15% 12%;
+    --card-foreground: 200 15% 92%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 18% 10%;
+    --popover-foreground: 200 18% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Cyber Blue (Investigation Theme) */
+    --primary: 200 100% 60%;
+    --primary-foreground: 220 20% 8%;
+    --primary-glow: 200 100% 70%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Tactical Gray */
+    --secondary: 220 12% 18%;
+    --secondary-foreground: 200 15% 88%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted - Command Interface */
+    --muted: 220 15% 15%;
+    --muted-foreground: 200 8% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Neon Green (Active Systems) */
+    --accent: 120 100% 50%;
+    --accent-foreground: 220 20% 8%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Alert Colors */
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 45 100% 60%;
+    --warning-foreground: 220 20% 8%;
+    --success: 120 60% 50%;
+    --success-foreground: 220 20% 8%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Borders & Inputs */
+    --border: 220 15% 20%;
+    --input: 220 15% 16%;
+    --ring: 200 100% 60%;
 
     --radius: 0.5rem;
 
@@ -91,6 +102,32 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Cyber Gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    --gradient-danger: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(0 100% 75%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(120 70% 60%) 100%);
+    --gradient-tactical: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--secondary)) 100%);
+
+    /* Glows & Effects */
+    --glow-primary: 0 0 20px hsl(var(--primary) / 0.5);
+    --glow-danger: 0 0 20px hsl(var(--destructive) / 0.5);
+    --glow-success: 0 0 20px hsl(var(--success) / 0.5);
+
+    /* Animation Timings */
+    --transition-cyber: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Light Theme - Clean Investigation Mode */
+  .light {
+    --background: 210 20% 96%;
+    --foreground: 220 15% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+    --primary: 200 90% 45%;
+    --secondary: 210 15% 88%;
+    --muted: 210 15% 92%;
+    --border: 210 15% 85%;
   }
 }
 
@@ -100,6 +137,88 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  }
+}
+
+@layer components {
+  /* Cyber Button Variants */
+  .btn-cyber {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground;
+    @apply shadow-[var(--glow-primary)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.7)];
+    @apply transition-[var(--transition-cyber)] border border-primary/30;
+  }
+
+  .btn-danger {
+    @apply bg-gradient-to-r from-destructive to-red-500 text-destructive-foreground;
+    @apply shadow-[var(--glow-danger)] hover:shadow-[0_0_30px_hsl(var(--destructive)/0.7)];
+  }
+
+  .btn-tactical {
+    @apply bg-gradient-to-r from-muted to-secondary text-secondary-foreground;
+    @apply border border-border hover:border-primary/50;
+  }
+
+  /* Grid Glow Effects */
+  .grid-glow {
+    @apply relative;
+  }
+
+  .grid-glow::before {
+    content: '';
+    @apply absolute -inset-px bg-gradient-to-r from-primary/20 via-transparent to-primary/20;
+    @apply rounded-lg blur-sm -z-10;
+  }
+
+  /* Alert Severity Styles */
+  .alert-critical {
+    @apply border-l-4 border-destructive bg-destructive/10 text-destructive-foreground;
+    box-shadow: var(--glow-danger);
+  }
+
+  .alert-warning {
+    @apply border-l-4 border-warning bg-warning/10 text-warning-foreground;
+  }
+
+  .alert-info {
+    @apply border-l-4 border-primary bg-primary/10 text-primary-foreground;
+  }
+
+  /* Scan Lines Animation */
+  .scan-lines {
+    @apply relative overflow-hidden;
+  }
+
+  .scan-lines::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent;
+    @apply h-full w-full;
+    animation: scan 2s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  /* Camera Feed Styles */
+  .camera-feed {
+    @apply relative bg-black rounded-lg overflow-hidden border border-primary/30;
+    @apply shadow-[var(--glow-primary)];
+  }
+
+  .camera-feed.active {
+    @apply border-accent shadow-[var(--glow-success)];
+  }
+
+  .camera-feed.alert {
+    @apply border-destructive shadow-[var(--glow-danger)];
+    animation: pulse-danger 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-danger {
+    0%, 100% { box-shadow: var(--glow-danger); }
+    50% { box-shadow: 0 0 40px hsl(var(--destructive) / 0.8); }
   }
 }
