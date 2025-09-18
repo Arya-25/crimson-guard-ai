@@ -1,7 +1,7 @@
-import Dashboard from "@/components/Dashboard";
+import SingleCameraApp from "@/components/SingleCameraApp";
 
 const Index = () => {
-  return <Dashboard />;
+  return <SingleCameraApp />;
 };
 
 export default Index;
