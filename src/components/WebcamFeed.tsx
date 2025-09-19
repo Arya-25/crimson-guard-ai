@@ -11,8 +11,7 @@ interface WebcamFeedProps {
 
 export const WebcamFeed = ({ onDetection }: WebcamFeedProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   
   const [isStreaming, setIsStreaming] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -20,129 +19,85 @@ export const WebcamFeed = ({ onDetection }: WebcamFeedProps) => {
   const [detections, setDetections] = useState<any[]>([]);
   const [fps, setFps] = useState(0);
   
-  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastFrameTimeRef = useRef<number>(0);
-  const frameCountRef = useRef<number>(0);
+  const alertCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAlertCheckRef = useRef<string>("");
+  
+  // Backend URL - change this to your Flask server URL
+  const BACKEND_URL = 'http://localhost:5000';
 
-  // Start webcam stream
+  // Start Flask video stream
   const startWebcam = async () => {
     try {
       setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 },
-          facingMode: 'environment' 
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
+      if (imgRef.current) {
+        imgRef.current.src = `${BACKEND_URL}/video_feed?${Date.now()}`;
         setIsStreaming(true);
+        startAlertChecking();
       }
     } catch (err) {
-      setError(`Camera access denied: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`Failed to connect to camera: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
-  // Stop webcam stream
+  // Stop video stream
   const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+    if (imgRef.current) {
+      imgRef.current.src = "";
     }
     setIsStreaming(false);
     setIsDetecting(false);
-    if (detectionIntervalRef.current) {
-      clearInterval(detectionIntervalRef.current);
+    stopAlertChecking();
+  };
+
+  // Check for new alerts from backend
+  const checkAlerts = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/alerts`);
+      if (response.ok) {
+        const alerts = await response.json();
+        if (alerts.length > 0 && alerts[0].id !== lastAlertCheckRef.current) {
+          const latestAlert = alerts[0];
+          lastAlertCheckRef.current = latestAlert.id;
+          
+          // Convert backend alert to frontend format
+          const detection = {
+            id: latestAlert.id,
+            weapon: latestAlert.weapon,
+            confidence: latestAlert.confidence,
+            timestamp: new Date(latestAlert.timestamp)
+          };
+          
+          setDetections(prev => [detection, ...prev.slice(0, 4)]);
+          onDetection?.(detection);
+          setFps(30); // Simulate FPS when detecting
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check alerts:', err);
     }
   };
 
-  // Calculate FPS
-  const calculateFPS = () => {
-    const now = Date.now();
-    frameCountRef.current++;
-    
-    if (now - lastFrameTimeRef.current >= 1000) {
-      setFps(frameCountRef.current);
-      frameCountRef.current = 0;
-      lastFrameTimeRef.current = now;
-    }
+  // Start checking for alerts
+  const startAlertChecking = () => {
+    setIsDetecting(true);
+    alertCheckIntervalRef.current = setInterval(checkAlerts, 1000); // Check every second
   };
 
-  // Simulate weapon detection (replace with actual AI model)
-  const processFrame = async () => {
-    if (!videoRef.current || !canvasRef.current || !isStreaming) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) return;
-
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw current video frame to canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Simulate detection processing
-    if (Math.random() < 0.05) { // 5% chance of detection
-      const mockDetection = {
-        id: Date.now(),
-        weapon: Math.random() > 0.5 ? 'knife' : 'gun',
-        confidence: 0.6 + Math.random() * 0.4,
-        bbox: {
-          x: Math.random() * 0.6 * canvas.width,
-          y: Math.random() * 0.6 * canvas.height,
-          width: 100 + Math.random() * 100,
-          height: 100 + Math.random() * 100
-        },
-        timestamp: new Date()
-      };
-      
-      setDetections(prev => [mockDetection, ...prev.slice(0, 4)]);
-      onDetection?.(mockDetection);
-      
-      // Draw detection box
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(
-        mockDetection.bbox.x,
-        mockDetection.bbox.y,
-        mockDetection.bbox.width,
-        mockDetection.bbox.height
-      );
-      
-      // Draw label
-      ctx.fillStyle = '#ef4444';
-      ctx.font = '16px monospace';
-      ctx.fillText(
-        `${mockDetection.weapon.toUpperCase()} ${(mockDetection.confidence * 100).toFixed(0)}%`,
-        mockDetection.bbox.x,
-        mockDetection.bbox.y - 5
-      );
+  // Stop checking for alerts
+  const stopAlertChecking = () => {
+    setIsDetecting(false);
+    if (alertCheckIntervalRef.current) {
+      clearInterval(alertCheckIntervalRef.current);
+      alertCheckIntervalRef.current = null;
     }
-    
-    calculateFPS();
   };
 
   // Toggle detection
   const toggleDetection = () => {
     if (isDetecting) {
-      if (detectionIntervalRef.current) {
-        clearInterval(detectionIntervalRef.current);
-        detectionIntervalRef.current = null;
-      }
-      setIsDetecting(false);
+      stopAlertChecking();
     } else {
-      detectionIntervalRef.current = setInterval(processFrame, 100); // 10 FPS detection
-      setIsDetecting(true);
+      startAlertChecking();
     }
   };
 
@@ -184,21 +139,13 @@ export const WebcamFeed = ({ onDetection }: WebcamFeedProps) => {
       {/* Video Feed */}
       <Card className="camera-feed">
         <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-          {/* Video Element */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
+          {/* Flask Video Stream */}
+          <img
+            ref={imgRef}
             className="w-full h-full object-cover"
             style={{ display: isStreaming ? 'block' : 'none' }}
-          />
-          
-          {/* Canvas for detection overlay */}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ display: isDetecting ? 'block' : 'none' }}
+            alt="Live surveillance feed"
+            onError={() => setError("Failed to load video stream. Make sure Flask backend is running on port 5000.")}
           />
 
           {/* Placeholder when not streaming */}
@@ -270,9 +217,7 @@ export const WebcamFeed = ({ onDetection }: WebcamFeedProps) => {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            Resolution: {isStreaming && videoRef.current ? 
-              `${videoRef.current.videoWidth}x${videoRef.current.videoHeight}` : 
-              'Unknown'}
+            Source: {isStreaming ? 'Flask Backend Stream' : 'Disconnected'}
           </div>
         </div>
       </Card>

@@ -30,8 +30,8 @@ const SingleCameraApp = () => {
 
   const handleDetection = (detection: any) => {
     const newAlert: Alert = {
-      id: `alert-${Date.now()}`,
-      timestamp: new Date(),
+      id: detection.id || `alert-${Date.now()}`,
+      timestamp: detection.timestamp || new Date(),
       camera: "Primary Webcam",
       weapon: detection.weapon,
       confidence: detection.confidence,
@@ -40,12 +40,37 @@ const SingleCameraApp = () => {
       status: "pending",
     };
     
-    setAlerts(prev => [newAlert, ...prev]);
-    setSystemStats(prev => ({
-      ...prev,
-      totalDetections: prev.totalDetections + 1,
-      lastAlert: new Date(),
-    }));
+    // Check if alert already exists to avoid duplicates
+    const existingAlert = alerts.find(alert => alert.id === newAlert.id);
+    if (!existingAlert) {
+      setAlerts(prev => [newAlert, ...prev]);
+      setSystemStats(prev => ({
+        ...prev,
+        totalDetections: prev.totalDetections + 1,
+        lastAlert: new Date(),
+      }));
+    }
+  };
+
+  // Function to acknowledge alerts via backend
+  const acknowledgeAlert = async (alertId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/alerts/${alertId}/acknowledge`, {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        setAlerts(prev => prev.map(alert => 
+          alert.id === alertId ? { ...alert, status: "acknowledged" } : alert
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
+      // Fallback to local state update
+      setAlerts(prev => prev.map(alert => 
+        alert.id === alertId ? { ...alert, status: "acknowledged" } : alert
+      ));
+    }
   };
 
   const toggleTheme = () => {
@@ -130,11 +155,7 @@ const SingleCameraApp = () => {
             <div className="xl:col-span-1">
               <AlertPanel 
                 alerts={alerts}
-                onAcknowledgeAlert={(id) => {
-                  setAlerts(prev => prev.map(alert => 
-                    alert.id === id ? { ...alert, status: "acknowledged" } : alert
-                  ));
-                }}
+                onAcknowledgeAlert={acknowledgeAlert}
               />
             </div>
           </div>
