@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend integration
+CORS(app, origins=["http://localhost:5173", "https://*.lovableproject.com"])  # Enable CORS for frontend integration
 
 # Alert storage
 alerts_db = []

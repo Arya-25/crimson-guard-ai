@@ -23,7 +23,7 @@ export const WebcamFeed = ({ onDetection }: WebcamFeedProps) => {
   const lastAlertCheckRef = useRef<string>("");
   
   // Backend URL - change this to your Flask server URL
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
   // Start Flask video stream
   const startWebcam = async () => {
